@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes.js";
 import albumRoutes from './routes/albumRoutes.js'
+import photoRoutes from './routes/photoRoutes.js'
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/auth", authRoutes);
-app.use("/photos", albumRoutes);
+app.use("/album", albumRoutes);
+app.use("/photo", photoRoutes);
 
 export default app;

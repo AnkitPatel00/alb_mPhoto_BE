@@ -17,6 +17,7 @@ const albumSchema = new mongoose.Schema(
       ref: "kaviospixUsers",
       required: true,
     },
+    sharedWith:[{type:String}]
   },
   { timestamps: true }
 );

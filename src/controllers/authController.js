@@ -95,8 +95,6 @@ export const googleCallback = async (req, res) => {
 
     let user = await User.findOne({ googleId: id });
 
-     
-
     if (!user) {
       user = await User.create({
         googleId: id,

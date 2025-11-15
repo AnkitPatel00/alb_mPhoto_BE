@@ -6,7 +6,6 @@ import {
   googleCallback,
   userLogout
 } from "../controllers/authController.js";
-import { verifyAccessToken } from "../middlewares/verifyAccessToken.js";
 import { verifyJwtToken } from "../middlewares/verifyJwtToken.js";
 
 const router = express.Router();
