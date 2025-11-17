@@ -31,7 +31,24 @@ const photoSchema = new mongoose.Schema(
       type: Boolean,
       default:false
     },
-    comments: [{ type: String }],
+    comments: [
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "kaviospixUsers",
+      required: true,
+    },
+    comment: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
     size:{type:String}
   },
   { timestamps: true }

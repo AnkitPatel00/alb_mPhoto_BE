@@ -9,6 +9,4 @@ router.post("/", verifyJwtToken,createAlbum)
 router.put("/share", verifyJwtToken,shareAlbum)
 router.put("/remove-email", verifyJwtToken,removeAlbumEmail)
 
-
-
 export default router

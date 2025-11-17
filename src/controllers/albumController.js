@@ -21,7 +21,7 @@ sharedWith:[email]
 export const getAlbum = async(req, res) => {
   const { _id } = req.user
   try {
-const albums =await Album.find({ownerId:_id})
+const albums =await Album.find({ownerId:_id}).sort({ createdAt: -1 })
     res.status(200).json({albums,message:"albums fetched successfully."})
   } catch (error) {
     res.status(500).json({ error: error.message || "internal server error" });

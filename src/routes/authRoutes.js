@@ -10,9 +10,9 @@ import { verifyJwtToken } from "../middlewares/verifyJwtToken.js";
 
 const router = express.Router();
 
-router.get("/checkToken",verifyJwtToken,checkToken);
+router.get("/checkToken",checkToken);
 router.get("/logout",userLogout);
-router.get("/user/profile/google", verifyJwtToken, getUserProfile);
+router.get("/user/profile/google",verifyJwtToken,getUserProfile);
 router.get("/google", googleAuth);
 router.get("/google/callback", googleCallback);
 

@@ -8,15 +8,23 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 export const checkToken = (req, res) => {
   try {
-    res.status(200).json({ message: "Token is Correct" });
+res.cookie("myName", "Ankit", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+});
+    return res.status(200).json({ message: "cookie send done." });
   } catch (error) {
-    res.status(500).json({ error: "error" });
+    return res.status(500).json({ error });
   }
 };
 
 
-export const getUserProfile = async(req, res) => {
-  const {googleId} = req.user
+
+
+export const getUserProfile = async (req, res) => {
+  const { googleId } = req.user
+ 
   try {
     const user = await User.findOne({ googleId }).select("-googleId");
     if (!user)
@@ -46,12 +54,11 @@ export const userLogout = (req, res) => {
 
 export const googleAuth = (req, res) => {
   const PORT = process.env.PORT || 5000;
-  const googleAccountsURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=http://localhost:${PORT}/auth/google/callback&response_type=code&scope=profile email`;
+  const googleAccountsURL = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.CLIENT_ID}&redirect_uri=${process.env.BACKEND_DOMAIN}/auth/google/callback&response_type=code&scope=profile%20email`;
   res.redirect(googleAccountsURL);
 };
 
 export const googleCallback = async (req, res) => {
-  const PORT = process.env.PORT || 5000;
   const { code } = req.query;
 
   if (!code) {
@@ -64,7 +71,7 @@ export const googleCallback = async (req, res) => {
       {
         client_id: process.env.CLIENT_ID,
         client_secret: process.env.CLIENT_SECRET,
-        redirect_uri: `http://localhost:${PORT}/auth/google/callback`,
+        redirect_uri: `${process.env.BACKEND_DOMAIN}/auth/google/callback`,
         grant_type: "authorization_code",
         code,
       },
@@ -73,23 +80,21 @@ export const googleCallback = async (req, res) => {
       }
     );
 
-    //user
+    const access_token = responseToken.data.access_token;
 
-   
-    
-  const access_token =  responseToken.data.access_token
-
-        if (!access_token) {
+    if (!access_token) {
       return res.status(401).json({ error: "No access token found" });
     }
-    
-    //user
 
-    const { data } = await axios.get("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-    });
+    // Fetch user
+    const { data } = await axios.get(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
 
     const { id, email, name, picture } = data;
 
@@ -103,16 +108,19 @@ export const googleCallback = async (req, res) => {
         picture,
       });
     }
-    else {
-      const jwtToken = jwt.sign({ user }, JWT_SECRET, { expiresIn: "24h" })
-      
-      res.cookie("jwt_token", jwtToken,{ httpOnly: true,
-  secure: true});
-      return res.redirect(`${process.env.FRONTEND_URL}`);
-    }
+
+    const jwtToken = jwt.sign({ user }, JWT_SECRET, { expiresIn: "24h" });
+
+res.cookie("jwt_token", jwtToken, {
+  httpOnly: true,
+  secure: true,          // required for SameSite=None
+  sameSite: "none",      // required for cross-domain cookie
+  maxAge: 1 * 24 * 60 * 60 * 1000 // 1 days
+});
 
     return res.redirect(`${process.env.FRONTEND_URL}`);
   } catch (error) {
     res.status(500).json({ error: "Google Auth Failed" });
   }
 };
+

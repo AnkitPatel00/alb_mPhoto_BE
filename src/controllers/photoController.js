@@ -2,7 +2,6 @@
 import PhotoModel from "../models/photo.model.js";
 import AlbumModel from "../models/album.model.js"
 import cloudinary from 'cloudinary'
-import photoModel from "../models/photo.model.js";
 
 cloudinary.config({
   cloud_name: process.env.CLODINARY_NAME,
@@ -37,7 +36,7 @@ export const uploadPhoto = async(req,res) => {
 export const getPhotos = async (req,res) => {
   const albumId = req.params.albumId
   try {
-    const photos = await PhotoModel.find({ albumId })
+    const photos = await PhotoModel.find({ albumId }).sort({ createdAt: -1 }).populate({path:"comments.user",select:"name picture"})
     res.status(200).json({
       message: "Image Fetched Successfully",
       photos
@@ -60,12 +59,15 @@ export const deletePhoto = async (req,res) => {
 
     const cloudinaryId = photo.public_id
 
-    console.log(cloudinaryId)
-
     await cloudinary.uploader.destroy(cloudinaryId);
 
-   const deletedPhoto = await PhotoModel.findByIdAndDelete(photoId);
+   const deletedPhoto = await PhotoModel.findByIdAndDelete(photoId).populate({path:"comments.user",select:"name picture"});
 
+    if (!deletedPhoto) {
+  return res.status(404).json({ error: "Photo not found" });
+}
+
+    
     res.json({deletedPhoto, message: "Image deleted successfully" });
 
   }
@@ -85,7 +87,6 @@ export const getSharedPhoto = async (req, res) => {
       sharedWith: email   // check inside array
     }).select("_id");     // we only need album ids
 
-    console.log(sharedAlbums)
 
     if (sharedAlbums.length === 0) {
       return res.status(200).json({ photos: [] });
@@ -96,7 +97,7 @@ export const getSharedPhoto = async (req, res) => {
     // 2. Find all photos whose albumId is inside these albums
     const photos = await PhotoModel.find({
       albumId: { $in: albumIds }
-    });
+    }).sort({ createdAt: -1 }).populate({path:"comments.user",select:"name picture"});
 
     // 3. Return photos
     return res.status(200).json({ photos });
@@ -108,5 +109,94 @@ export const getSharedPhoto = async (req, res) => {
     });
   }
 };
+
+export const addComment = async (req, res) => {
+  const { comment } = req.body;
+  const { photoId } = req.params;
+  const { _id } = req.user;
+
+  try {
+    const photo = await PhotoModel.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+    const updatedPhoto = await PhotoModel.findByIdAndUpdate(
+      photoId,
+      {
+        $push: {
+          comments: {
+            user: _id,
+            comment,
+            createdAt: new Date(),
+          },
+        },
+      },
+      { new: true }
+    ).populate({path:"comments.user",select:"name picture"});
+
+    return res.status(201).json({
+      updatedPhoto,
+      message: "Comment added successfully",
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to add Comment",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteComment = async (req, res) => {
+  const { photoId } = req.params;
+  const { commentId } = req.body;
+  const { _id: userId } = req.user;
+
+  try {
+    const photo = await PhotoModel.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({ error: "Photo not found" });
+    }
+
+   
+    const comment = photo.comments.id(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+
+   
+    if (comment.user.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ error: "You are not allowed to delete this comment" });
+    }
+
+   
+    const updatedPhoto = await PhotoModel.findByIdAndUpdate(
+      photoId,
+      {
+        $pull: { comments: { _id: commentId } },
+      },
+      { new: true }
+    ).populate({ path: "comments.user", select: "name picture" });
+
+    return res.status(200).json({
+      message: "Comment deleted successfully",
+      updatedPhoto,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to delete Comment",
+      error: error.message,
+    });
+  }
+};
+
+
+
 
 

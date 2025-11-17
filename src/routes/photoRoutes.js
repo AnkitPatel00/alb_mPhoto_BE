@@ -1,6 +1,6 @@
 import express from 'express'
 import { verifyJwtToken } from '../middlewares/verifyJwtToken.js'
-import { deletePhoto, getPhotos, getSharedPhoto, uploadPhoto } from '../controllers/photoController.js'
+import { deletePhoto, getPhotos, getSharedPhoto, uploadPhoto,addComment, deleteComment } from '../controllers/photoController.js'
 import multer from 'multer'
 import dotenv from "dotenv"
 dotenv.config()
@@ -15,5 +15,7 @@ router.get("/album/shared", verifyJwtToken,getSharedPhoto)
 router.get("/:albumId", verifyJwtToken,getPhotos)
 router.post("/", verifyJwtToken,upload.single("image"),uploadPhoto)
 router.delete("/:photoId", verifyJwtToken,deletePhoto)
+router.post("/comment/:photoId", verifyJwtToken,addComment)
+router.post("/comment/delete/:photoId", verifyJwtToken,deleteComment)
 
 export default router

@@ -7,30 +7,21 @@ const JWT_SECRET = process.env.JWT_SECRET
 
 export const verifyJwtToken = (req, res, next) => {
   const { jwt_token } = req.cookies;
-  
   try {
+    if (!jwt_token) {
+      return res.status(403).json({ error: "Token Required" });
+    }
+    const decodedToken = jwt.verify(jwt_token, JWT_SECRET);
 
-    if (!jwt_token)
-    {
-      res.status(403).json({ error: error.message || "Token Require" })
-      
+    if (!decodedToken) {
+      return res.status(403).json({ error: "Token Invalid" });
     }
-    const decodedToken = jwt.verify(jwt_token, JWT_SECRET)
-    if (decodedToken)
-    {
-      req.user = decodedToken.user
-      next()
-    }
-    else {
-      
-      res.status(403).json({ error: error.message || "Token Invalid" })
-    }
-    
+
+    req.user = decodedToken.user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: error.message || "Invalid Token" });
   }
-  catch (error)
-  {
-    res.status(403).json({error: error.message ||"Invalid Token"})
-}
+};
 
-}
 
