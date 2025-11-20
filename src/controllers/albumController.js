@@ -1,4 +1,12 @@
 import Album from "../models/album.model.js";
+import PhotoModel from "../models/photo.model.js";
+import cloudinary from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLODINARY_NAME,
+  api_key:process.env.CLODINARY_API_KEY,
+  api_secret:process.env.CLODINARY_API_SECRET
+})
 
 export const createAlbum = async(req, res) => {
   const { _id,email } = req.user
@@ -81,6 +89,38 @@ export const removeAlbumEmail = async (req, res) => {
     });
   }
 };
+
+
+export const removeAlbum = async (req, res) => {
+  const { albumId } = req.params;
+
+  try {
+    const album = await Album.findById(albumId);
+    if (!album) {
+      return res.status(404).json({ error: "Album not found." });
+    }
+
+    const photos = await PhotoModel.find({ albumId });
+
+await Promise.all(
+  photos.map(photo => cloudinary.uploader.destroy(photo.public_id))
+);
+
+    await PhotoModel.deleteMany({ albumId });
+
+  const deletedAlbum =  await Album.findByIdAndDelete(albumId);
+
+    res.status(200).json({deletedAlbum,
+      message: "Album and all photos deleted successfully.",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message || "Internal server error",
+    });
+  }
+};
+
 
 
 
